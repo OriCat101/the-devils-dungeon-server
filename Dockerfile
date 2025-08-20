@@ -1,8 +1,10 @@
 FROM rustlang/rust:nightly as builder
 WORKDIR /app
 
-# Copy source code
+# Copy source code (including .sqlx for SQLx offline mode)
 COPY . ./
+COPY .sqlx ./.sqlx
+
 WORKDIR /app/server
 
 # Build the project (release for smaller image)
@@ -20,6 +22,7 @@ COPY --from=builder /app/server/target/release/setup ./setup
 COPY --from=builder /app/server/migrations ./migrations
 COPY --from=builder /app/server/Cargo.toml ./Cargo.toml
 COPY --from=builder /app/server/Cargo.lock ./Cargo.lock
+COPY --from=builder /app/server/.sqlx ./.sqlx
 
 EXPOSE 8080
 
