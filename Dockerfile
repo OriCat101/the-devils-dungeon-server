@@ -1,4 +1,4 @@
-FROM rust:1.75 as builder
+FROM rustlang/rust:nightly as builder
 WORKDIR /app
 
 # Copy source code
