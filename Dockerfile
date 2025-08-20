@@ -1,11 +1,8 @@
 FROM rustlang/rust:nightly as builder
 WORKDIR /app
 
-# Copy source code (including .sqlx for SQLx offline mode)
-COPY . ./
-COPY .sqlx ./.sqlx
-
-WORKDIR /app/server
+# Copy everything including .sqlx (needed for SQLx offline mode)
+COPY . .
 
 # Build the project (release for smaller image)
 RUN cargo build --release
@@ -17,12 +14,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y libpq-dev ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Copy the built binaries and migrations from builder
-COPY --from=builder /app/server/target/release/level_server ./level_server
-COPY --from=builder /app/server/target/release/setup ./setup
-COPY --from=builder /app/server/migrations ./migrations
-COPY --from=builder /app/server/Cargo.toml ./Cargo.toml
-COPY --from=builder /app/server/Cargo.lock ./Cargo.lock
-COPY --from=builder /app/server/.sqlx ./.sqlx
+COPY --from=builder /app/target/release/level_server ./level_server
+COPY --from=builder /app/target/release/setup ./setup
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/Cargo.toml ./Cargo.toml
+COPY --from=builder /app/Cargo.lock ./Cargo.lock
+COPY --from=builder /app/.sqlx ./.sqlx
 
 EXPOSE 8080
 
