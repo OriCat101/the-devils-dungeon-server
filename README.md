@@ -1,0 +1,14 @@
+# The devils dungeon level server
+
+This is the server that hosts the levels for the devils dungeon. Feel free to use to run your own server and/or submit pull requests.
+
+
+## Setup to use
+1. Config the .env
+2. Run the bin/setup.rs
+3. Run the main.rs 
+
+## Development
+
+### Adding a new migration
+run `sqlx migrate add <name here>` to generate a new migration.
