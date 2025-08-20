@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT json_build_object(\n            'key', levels.key,\n            'map', levels.map,\n            'metadata', json_build_object(\n                'author_id', levels.user_id::text,\n                'author_name', users.username,\n                'description', levels.description,\n                'name', levels.name,\n                'commended', levels.commended,\n                'id', levels.id::text,\n                'official', levels.official,\n                'version', levels.version\n            ),\n            'solution', levels.solution,\n            'size', levels.size,\n            'spawn', levels.spawn\n        ) AS level_json\n        FROM levels\n        JOIN users ON levels.user_id = users.id\n        WHERE levels.id = $1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "level_json",
+        "type_info": "Json"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "e45bf5c750d420690393893864b1fd731bd6c9107d8b1824b00441406eacb55a"
+}

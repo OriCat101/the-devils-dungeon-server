@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT levels.id, levels.name, users.username AS author, levels.official, levels.version FROM levels JOIN users ON levels.user_id = users.id WHERE levels.user_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "author",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "official",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "version",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "0abb333e07393cef23dd0cf9f5bbe0bd1465833a3133afd3dc7a348872c56b12"
+}

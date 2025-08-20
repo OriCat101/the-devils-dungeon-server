@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO levels (name, description, commended, official, version, solution, key, map, size, spawn, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Bool",
+        "Int4",
+        "Int4Array",
+        "VarcharArray",
+        "Jsonb",
+        "Int4Array",
+        "Int4Array",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f65f39bf7392f04aafe56a3ea582d5392eca908464fedd29c22d5453ff160746"
+}

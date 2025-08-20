@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT json_build_object(\n            'id', levels.id::text,\n            'name', levels.name,\n            'description', levels.description,\n            'author_id', users.id::text,\n            'author', users.username,\n            'official', levels.official,\n            'commended', levels.commended,\n            'version', levels.version\n        ) AS summary_json\n        FROM levels JOIN users ON levels.user_id = users.id\n        WHERE levels.name LIKE $1\n        ORDER BY levels.name\n        LIMIT $2 OFFSET $3\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "summary_json",
+        "type_info": "Json"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "98476a90b0e9d3053fb7b600d024f5651f3d675b11060f9d2f066e727771441b"
+}
