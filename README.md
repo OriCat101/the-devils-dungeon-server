@@ -6,7 +6,10 @@ This is the server that hosts the levels for the devils dungeon. Feel free to us
 ## Setup to use
 1. Config the .env
 2. Run the bin/setup.rs
-3. Run the main.rs 
+3. Run the main.rs
+
+## Docker
+`docker compose up --build` to build it
 
 ## Development
 
