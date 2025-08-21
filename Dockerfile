@@ -1,29 +1,39 @@
-FROM rustlang/rust:nightly as builder
+# ---- Build stage ----
+FROM rustlang/rust:nightly AS builder
+
 WORKDIR /app
 
-# Copy everything including .sqlx (needed for SQLx offline mode)
-COPY . .
+# Install build dependencies
+RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 
-# Build the project (release for smaller image)
+# Copy Cargo files first (for caching)
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+COPY .sqlx ./.sqlx
+COPY migrations ./migrations
+
+# Enable SQLx offline mode
+ENV SQLX_OFFLINE true
+
+# Build the binary
 RUN cargo build --release
 
-FROM debian:bullseye-slim
+# ---- Runtime stage ----
+FROM debian:bookworm-slim
+
+# Install runtime deps
+RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Install required system dependencies
-RUN apt-get update && apt-get install -y libpq-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+# Copy the compiled binary
+COPY --from=builder /app/target/release/level_server .
 
-# Copy the built binaries and migrations from builder
-COPY --from=builder /app/target/release/level_server ./level_server
-COPY --from=builder /app/target/release/setup ./setup
-COPY --from=builder /app/migrations ./migrations
-COPY --from=builder /app/Cargo.toml ./Cargo.toml
-COPY --from=builder /app/Cargo.lock ./Cargo.lock
-COPY --from=builder /app/.sqlx ./.sqlx
+# Copy any migrations (needed by sqlx migrate)
+COPY migrations ./migrations
 
+# Expose server port
 EXPOSE 8080
 
-# Entrypoint script to run migrations and start the server
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+# Run the server
+CMD ["./level_server"]

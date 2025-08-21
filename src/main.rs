@@ -23,7 +23,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Could not connect to the database");
 
-    println!("Starting server at http://127.0.0.1:{}", port);
+    println!("Starting server at http://0.0.0.0:{}", port);
 
     HttpServer::new(move || {
         App::new()
@@ -33,7 +33,7 @@ async fn main() -> std::io::Result<()> {
             .configure(auth::config)
             .configure(admin::config)
     })
-    .bind(("127.0.0.1", port.parse::<u16>().unwrap()))?
+    .bind(("0.0.0.0", port.parse::<u16>().unwrap()))?
     .run()
     .await
 }

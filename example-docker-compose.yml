@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: leah
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: levels
+    ports:
+      - "5432:5432"
+
+  server:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://leah:secretpassword@db:5432/levels
+    ports:
+      - "8080:8080"
