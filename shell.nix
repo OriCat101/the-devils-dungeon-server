@@ -18,24 +18,20 @@ pkgs.mkShell {
     pkgs.postgresql.lib  # PostgreSQL library for linking
   ];
 
-# PostgreSQL environment variables
+  # PostgreSQL environment variables
   PGDATA = "./.postgres";  # Database storage directory
   PGPORT = "5432";         # PostgreSQL port
   PGUSER = "dev";
   PGPASSWORD = "secretpassword";
   PGDB = "levels";
 
-
   # Enable SQLx offline mode
   SQLX_OFFLINE = "true";
-  #DATABASE_URL = "postgres://dev:secretpassword@localhost:5432/levels";
   # Set environment variables for OpenSSL
   PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
   OPENSSL_DIR = "${pkgs.openssl.dev}";
   OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
   OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
-
-
 
   shellHook = ''
     echo "Rust nightly environment ready"
