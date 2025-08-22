@@ -16,7 +16,7 @@ COPY migrations ./migrations
 ENV SQLX_OFFLINE true
 
 # Build the binary
-RUN cargo build --release
+RUN cargo build --release --bin level_server --bin setup
 
 # ---- Runtime stage ----
 FROM debian:bookworm-slim
@@ -26,11 +26,13 @@ RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/
 
 WORKDIR /app
 
-# Copy the compiled binary
+# Copy the compiled binarys
 COPY --from=builder /app/target/release/level_server .
+COPY --from=builder /app/target/release/setup .
 
 # Copy any migrations (needed by sqlx migrate)
 COPY migrations ./migrations
+COPY --from=builder /app/.sqlx ./.sqlx
 
 # Expose server port
 EXPOSE 8080

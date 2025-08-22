@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO levels (name, description, commended, official, version, solution, key, map, size, spawn, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+  "query": "UPDATE levels SET name = $1, description = $2, version = $3, total_crystals = $4, solution = $5, key = $6, map = $7, size = $8, spawn = $9 WHERE id = $10 AND user_id = $11 RETURNING id",
   "describe": {
     "columns": [
       {
@@ -13,14 +13,14 @@
       "Left": [
         "Varchar",
         "Varchar",
-        "Bool",
-        "Bool",
+        "Int4",
         "Int4",
         "Int4Array",
         "VarcharArray",
         "Jsonb",
         "Int4Array",
         "Int4Array",
+        "Uuid",
         "Uuid"
       ]
     },
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "f65f39bf7392f04aafe56a3ea582d5392eca908464fedd29c22d5453ff160746"
+  "hash": "527bd66459e8ed0f43e059798df93c3e1c3c02943e6dd27e05e1d4d760e65944"
 }

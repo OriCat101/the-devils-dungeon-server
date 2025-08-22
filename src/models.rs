@@ -7,6 +7,7 @@ pub struct LevelMetadata {
     pub commended: bool,
     pub local: bool,
     pub version: i32,
+    pub total_crystals: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -18,9 +19,9 @@ pub enum Tile {
         tile: f64,
     },
 }
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Level {
+    pub id: Option<String>,
     pub key: Vec<String>,
     pub map: Vec<Vec<Vec<Tile>>>,
     pub metadata: LevelMetadata,

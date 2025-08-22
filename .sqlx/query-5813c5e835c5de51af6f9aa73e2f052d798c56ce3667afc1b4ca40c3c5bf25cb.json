@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO levels (name, description, commended, official, version, solution, key, map, size, spawn, user_id, total_crystals) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Bool",
+        "Int4",
+        "Int4Array",
+        "VarcharArray",
+        "Jsonb",
+        "Int4Array",
+        "Int4Array",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5813c5e835c5de51af6f9aa73e2f052d798c56ce3667afc1b4ca40c3c5bf25cb"
+}

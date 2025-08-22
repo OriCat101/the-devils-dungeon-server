@@ -46,29 +46,64 @@ pub async fn add_level(
 ) -> impl Responder {
     let level = level.into_inner();
 
-    let row = sqlx::query!(
-        "INSERT INTO levels (name, description, commended, official, version, solution, key, map, size, spawn, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
-        level.metadata.name,
-        level.metadata.description,
-        false,
-        false,
-        level.metadata.version,
-        &level.solution,
-        &level.key,
-        serde_json::to_value(&level.map).unwrap(),
-        &level.size,
-        &level.spawn,
-        match Uuid::parse_str(&user.user_id) {
-            Ok(u) => u,
-            Err(_) => return HttpResponse::BadRequest().body("Invalid UUID"),
-        }
-    )
-    .fetch_one(pool.get_ref())
-    .await;
+    let user_uuid = match Uuid::parse_str(&user.user_id) {
+        Ok(u) => u,
+        Err(_) => return HttpResponse::BadRequest().body("Invalid UUID"),
+    };
 
-    match row {
-        Ok(record) => HttpResponse::Ok().json(json!({"id": record.id.to_string()})),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Insert failed: {}", e)),
+    if let Some(id) = &level.id {
+        // Update existing level
+        let level_uuid = match Uuid::parse_str(id) {
+            Ok(u) => u,
+            Err(_) => return HttpResponse::BadRequest().body("Invalid Level UUID"),
+        };
+
+        let result = sqlx::query!(
+            "UPDATE levels SET name = $1, description = $2, version = $3, total_crystals = $4, solution = $5, key = $6, map = $7, size = $8, spawn = $9 WHERE id = $10 AND user_id = $11 RETURNING id",
+            level.metadata.name,
+            level.metadata.description,
+            level.metadata.version,
+            level.metadata.total_crystals,
+            &level.solution,
+            &level.key,
+            serde_json::to_value(&level.map).unwrap(),
+            &level.size,
+            &level.spawn,
+            level_uuid,
+            user_uuid
+        )
+        .fetch_optional(pool.get_ref())
+        .await;
+
+        match result {
+            Ok(Some(record)) => HttpResponse::Ok().json(json!({"id": record.id.to_string()})),
+            Ok(None) => HttpResponse::NotFound().body("Level not found or not owned by user"),
+            Err(e) => HttpResponse::InternalServerError().body(format!("Update failed: {}", e)),
+        }
+    } else {
+        // Insert new level
+        let row = sqlx::query!(
+            "INSERT INTO levels (name, description, commended, official, version, solution, key, map, size, spawn, user_id, total_crystals) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id",
+            level.metadata.name,
+            level.metadata.description,
+            false,
+            false,
+            level.metadata.version,
+            &level.solution,
+            &level.key,
+            serde_json::to_value(&level.map).unwrap(),
+            &level.size,
+            &level.spawn,
+            user_uuid,
+            level.metadata.total_crystals
+        )
+        .fetch_one(pool.get_ref())
+        .await;
+
+        match row {
+            Ok(record) => HttpResponse::Ok().json(json!({"id": record.id.to_string()})),
+            Err(e) => HttpResponse::InternalServerError().body(format!("Insert failed: {}", e)),
+        }
     }
 }
 
@@ -94,8 +129,12 @@ pub async fn get_level_by_id(
                 'author_id', levels.user_id::text,
                 'author_name', users.username,
                 'description', levels.description,
+                'total_crystals', levels.total_crystals,
                 'name', levels.name,
                 'commended', levels.commended,
+                'stars', (
+                    SELECT COUNT(*) FROM level_stars WHERE level_stars.level_id = levels.id
+                ),
                 'id', levels.id::text,
                 'official', levels.official,
                 'version', levels.version
@@ -146,8 +185,12 @@ pub async fn search_levels(
             'description', levels.description,
             'author_id', users.id::text,
             'author', users.username,
+            'total_crystals', levels.total_crystals,
             'official', levels.official,
             'commended', levels.commended,
+            'stars', (
+                SELECT COUNT(*) FROM level_stars WHERE level_stars.level_id = levels.id
+            ),
             'version', levels.version
         ) AS summary_json
         FROM levels JOIN users ON levels.user_id = users.id
@@ -167,9 +210,83 @@ pub async fn search_levels(
     }
 }
 
+#[post("/levels/{id}/star")]
+pub async fn star_level(
+    pool: web::Data<PgPool>,
+    id: web::Path<String>,
+    user: AuthUser
+) -> impl Responder {
+    let level_uuid = match Uuid::parse_str(&id.into_inner()) {
+        Ok(u) => u,
+        Err(_) => return HttpResponse::BadRequest().body("Invalid UUID"),
+    };
+
+    let user_uuid = match Uuid::parse_str(&user.user_id) {
+        Ok(u) => u,
+        Err(_) => return HttpResponse::BadRequest().body("Invalid UUID"),
+    };
+
+    let result = sqlx::query!(
+        "INSERT INTO level_stars (user_id, level_id) VALUES ($1, $2) ON CONFLICT (user_id, level_id) DO NOTHING",
+        user_uuid,
+        level_uuid
+    )
+    .execute(pool.get_ref())
+    .await;
+    
+    match result {
+        Ok(res) => {
+            if res.rows_affected() > 0 {
+                HttpResponse::Ok().json(json!({"starred": true}))
+            } else {
+                HttpResponse::Conflict().body("Level already starred")
+            }
+        },
+        Err(e) => HttpResponse::InternalServerError().body(format!("Insert failed: {}", e)),
+    }
+}
+
+#[post("/levels/{id}/unstar")]
+pub async fn unstar_level(
+    pool: web::Data<PgPool>,
+    id: web::Path<String>,
+    user: AuthUser
+) -> impl Responder {
+    let level_uuid = match Uuid::parse_str(&id.into_inner()) {
+        Ok(u) => u,
+        Err(_) => return HttpResponse::BadRequest().body("Invalid UUID"),
+    };
+
+    let user_uuid = match Uuid::parse_str(&user.user_id) {
+        Ok(u) => u,
+        Err(_) => return HttpResponse::BadRequest().body("Invalid UUID"),
+    };
+
+    let result = sqlx::query!(
+        "DELETE FROM level_stars WHERE user_id = $1 AND level_id = $2",
+        user_uuid,
+        level_uuid
+    )
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(res) => {
+            if res.rows_affected() > 0 {
+                HttpResponse::Ok().json(json!({"starred": false}))
+            } else {
+                HttpResponse::Conflict().body("Level not starred")
+            }
+        },
+        Err(e) => HttpResponse::InternalServerError().body(format!("Delete failed: {}", e)),
+    }
+}
+
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(add_level)
        .service(get_level_by_id)
        .service(search_levels)
-       .service(get_levels_by_user);
+       .service(get_levels_by_user)
+       .service(star_level)
+       .service(unstar_level);
 }
