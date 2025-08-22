@@ -21,14 +21,14 @@ pkgs.mkShell {
 # PostgreSQL environment variables
   PGDATA = "./.postgres";  # Database storage directory
   PGPORT = "5432";         # PostgreSQL port
-  POSTGRES_USER = "dev";
-  POSTGRES_PASSWORD = "secretpassword";
-  POSTGRES_DB = "levels";
+  PGUSER = "dev";
+  PGPASSWORD = "secretpassword";
+  PGDB = "levels";
 
 
   # Enable SQLx offline mode
   SQLX_OFFLINE = "true";
-  DATABASE_URL = "postgres://dev:secretpassword@localhost:5432/levels";
+  #DATABASE_URL = "postgres://dev:secretpassword@localhost:5432/levels";
   # Set environment variables for OpenSSL
   PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
   OPENSSL_DIR = "${pkgs.openssl.dev}";
@@ -57,10 +57,15 @@ pkgs.mkShell {
     
     # Start PostgreSQL when entering the shell
     pg_ctl start -o "-k $PGRUN" -l "$PGDATA/postgres.log"
-    
-    # Create a database with the same name as the current directory
-    createdb -h $PGRUN $(basename "$PWD") 2>/dev/null || true
-    
+
+    # Create user and database if they don't exist
+    echo "Setting up PostgreSQL user and database..."
+    psql -h $PGRUN -d postgres -c "CREATE USER $PGUSER WITH PASSWORD $PGPASSWORD;" 2>/dev/null || true
+    psql -h $PGRUN -d postgres -c "CREATE DATABASE $PGDB WITH OWNER $PGUSER;" 2>/dev/null || true
+
+    # Set default environment variables for database connections
+    export DATABASE_URL="postgresql://$PGUSER:$PGPASSWORD@localhost:$PGPORT/$PGDB"
+
     echo "PostgreSQL is running on port $PGPORT"
     echo "Database '$(basename "$PWD")' is available"
     echo "Socket directory: $PGRUN"
