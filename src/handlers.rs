@@ -132,6 +132,9 @@ pub async fn get_level_by_id(
                 'total_crystals', levels.total_crystals,
                 'name', levels.name,
                 'commended', levels.commended,
+                'stars', (
+                    SELECT COUNT(*) FROM level_stars WHERE level_stars.level_id = levels.id
+                ),
                 'id', levels.id::text,
                 'official', levels.official,
                 'version', levels.version
@@ -185,6 +188,9 @@ pub async fn search_levels(
             'total_crystals', levels.total_crystals,
             'official', levels.official,
             'commended', levels.commended,
+            'stars', (
+                SELECT COUNT(*) FROM level_stars WHERE level_stars.level_id = levels.id
+            ),
             'version', levels.version
         ) AS summary_json
         FROM levels JOIN users ON levels.user_id = users.id
@@ -204,7 +210,6 @@ pub async fn search_levels(
     }
 }
 
-// Star level
 #[post("/levels/{id}/star")]
 pub async fn star_level(
     pool: web::Data<PgPool>,
@@ -241,10 +246,47 @@ pub async fn star_level(
     }
 }
 
+#[post("/levels/{id}/unstar")]
+pub async fn unstar_level(
+    pool: web::Data<PgPool>,
+    id: web::Path<String>,
+    user: AuthUser
+) -> impl Responder {
+    let level_uuid = match Uuid::parse_str(&id.into_inner()) {
+        Ok(u) => u,
+        Err(_) => return HttpResponse::BadRequest().body("Invalid UUID"),
+    };
+
+    let user_uuid = match Uuid::parse_str(&user.user_id) {
+        Ok(u) => u,
+        Err(_) => return HttpResponse::BadRequest().body("Invalid UUID"),
+    };
+
+    let result = sqlx::query!(
+        "DELETE FROM level_stars WHERE user_id = $1 AND level_id = $2",
+        user_uuid,
+        level_uuid
+    )
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(res) => {
+            if res.rows_affected() > 0 {
+                HttpResponse::Ok().json(json!({"starred": false}))
+            } else {
+                HttpResponse::Conflict().body("Level not starred")
+            }
+        },
+        Err(e) => HttpResponse::InternalServerError().body(format!("Delete failed: {}", e)),
+    }
+}
+
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(add_level)
        .service(get_level_by_id)
        .service(search_levels)
        .service(get_levels_by_user)
-       .service(star_level);
+       .service(star_level)
+       .service(unstar_level);
 }
