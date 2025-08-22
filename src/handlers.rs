@@ -129,6 +129,7 @@ pub async fn get_level_by_id(
                 'author_id', levels.user_id::text,
                 'author_name', users.username,
                 'description', levels.description,
+                'total_crystals', levels.total_crystals,
                 'name', levels.name,
                 'commended', levels.commended,
                 'id', levels.id::text,
@@ -181,6 +182,7 @@ pub async fn search_levels(
             'description', levels.description,
             'author_id', users.id::text,
             'author', users.username,
+            'total_crystals', levels.total_crystals,
             'official', levels.official,
             'commended', levels.commended,
             'version', levels.version
