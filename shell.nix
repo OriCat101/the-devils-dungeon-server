@@ -56,8 +56,8 @@ pkgs.mkShell {
 
     # Create user and database if they don't exist
     echo "Setting up PostgreSQL user and database..."
-    psql -h $PGRUN -d postgres -c "CREATE USER $PGUSER WITH PASSWORD $PGPASSWORD;" 2>/dev/null || true
-    psql -h $PGRUN -d postgres -c "CREATE DATABASE $PGDB WITH OWNER $PGUSER;" 2>/dev/null || true
+    psql -h $PGRUN -d postgres -U $(whoami) -c "CREATE USER $PGUSER WITH PASSWORD '$PGPASSWORD';"
+    psql -h $PGRUN -d postgres -U $(whoami) -c "CREATE DATABASE $PGDB WITH OWNER $PGUSER;" 
 
     # Set default environment variables for database connections
     export DATABASE_URL="postgresql://$PGUSER:$PGPASSWORD@localhost:$PGPORT/$PGDB"
